@@ -8,7 +8,7 @@ import urllib2
 #  @param matchStr [ str | None | in  ] - Regex string to find targeted items in the given URL.
 #  @param imageURL [ str | None | in  ] - Destination URL to search images in.
 #  
-#  @exception N/A
+#  @exception IOError - When the imageURL does not exist and returns None.
 #  
 #  @retval None - None.
 def imageScan(matchStr, imageURL):
