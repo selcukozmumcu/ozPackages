@@ -1,4 +1,3 @@
-import os
 import re
 import urllib2
 
@@ -13,22 +12,23 @@ import urllib2
 #  
 #  @retval None - None.
 def imageScan(matchStr, imageURL):
-    
-    # Checking if the URL exists and valid.
-    if not os.path.isfile(imageURL):
-        raise IOError('\nImage URL does not exist!\nPlease check the URL address.\n')
-    
-    else:    
-        # Opening and reading the imageURL
-        html        = urllib2.urlopen(imageURL)
-        htmlContent = html.read()
-        
-        # Finding matches according to regex string
-        matches = re.findall(matchStr, htmlContent, re.DOTALL)
-        
-        # Removes the '/' at the beginning of the string to prepare it for 'os.path.join' function.
-        return [x[1:] for x in matches]
+       
+       # Checking if the link exists or not!
+       try:
+              # Opening and reading the imageURL
+              html        = urllib2.urlopen(imageURL)
+       except urllib2.HTTPError, e:
+              print(e.code)           
+
+       # Reading the URL content
+       htmlContent = html.read()
+       
+       # Finding matches according to regex string
+       matches = re.findall(matchStr, htmlContent, re.DOTALL)
+       
+       # Removes the '/' at the beginning of the string to prepare it for 'os.path.join' function.
+       return [x[1:] for x in matches]
 
 if __name__=='__main__':
     
-    imageScan(matchStr, imageURL)
+       imageScan(matchStr, imageURL)
