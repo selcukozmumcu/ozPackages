@@ -10,23 +10,34 @@ import os
 #  @param imageURL [ str | None | in  ] - Absolute path for image URL.
 #  @param filePath [ str | None | in  ] - Absolute path for download destination.
 #  
-#  @exception N/A
+#  @exception IOError   - If the filePath cannot be created, then raises IOError: 
+#                         "filePath does not exist!Please check the path."
 #  
+#  @exception HTTPError - If the given imageURL is wrong or does not exist, then returns None. 
+
 #  @retval None - None.
-def downloadImage(imageURL, filePath):
+def downloadImage(imageURL, filePath): 
     
-    # Checking if the URL exists and valid.
-    if not os.path.isfile(imageURL):
-        raise IOError('\nImage URL does not exist!\nPlease check the URL address.\n')    
-    
-    # Checking if the given path exists or not.
-    if not os.path.exists(filePath) and os.path.isdir(filePath):
-        raise IOError('\nFile path does not exist!\nPlease check the path.\n')      
+    try:
+        # Checking if the given path exists or not.
+        if not os.path.exists(filePath) and os.path.isdir(filePath):
+            
+            # Creates the filePath if does not exist.
+            os.makedirs(filePath)
+    except:    
+        raise IOError('\nfilePath does not exist!\nPlease check the path.\n')      
+
+
+    # Checking if the link exists or not!
+    try:
+        # Opening and reading the imageURL
+        fileContent = urllib2.urlopen(imageURL)
+   
+    except urllib2.HTTPError, e:
+        return None        
+
     
     else:    
-        # Opening the imageURL
-        fileContent = urllib2.urlopen(imageURL)
-        
         # Defining which unrecognized characters to be replaced when found
         trLetter = {'ü':'u', 'ı':'i', 'ğ':'g', 'ş':'s', ' ':''}
         
@@ -49,6 +60,3 @@ def downloadImage(imageURL, filePath):
     # Returns the downloaded file's absolute path with the name.
     return absolutePath
 
-if __name__=='__main__':
-    
-    downloadImage(imageURL, filePath)
