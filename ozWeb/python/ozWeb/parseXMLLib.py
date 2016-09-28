@@ -1,87 +1,120 @@
-# -*- encoding: utf-8 -*-
+#!/usr/bin/python
+# ----------------------------------------------------------------------------------------------------
+# DESCRIPTION
+# ----------------------------------------------------------------------------------------------------
+## @file    [u'parseXMLLib'].py [ FILE ] - Downloading XML files, extracts required content and 
+#                                             saves it as an HTML file..
+## @package parseXMLLib         [ FILE ] - Downloading XML files, extracts required content and 
+#                                             saves it as an HTML file..
 
-import os
-import requests
-from   xml.etree import ElementTree
 
 #
-## @brief This function downloads the XML files from a certain URL to one of the given
-#         download paths, then exctracts 'ilksureadi' and 'meal' tags from each downloaded XML
-#         and saves them into an HTML file at the given download path.
+# ----------------------------------------------------------------------------------------------------
+# IMPORT
+# ----------------------------------------------------------------------------------------------------
+import os
+import re
+import requests
+import xml.etree.ElementTree as ET
+#
+#-----------------------------------------------------------------------------------------------------
+# CODE
+#----------------------------------------------------------------------------------------------------
+#
+## @brief Downloading XML files, extracts required content and saves it as an HTML file.
 #  
-#  @param downloadPath [ str | None | in  ] - This is the download path for XML files.
-#  @param htmlPath     [ str | None | in  ] - This is the download path for HTML files.
+#  @param destinationDir [ str | None | in  ] - Destination Directory for HTML files.
 #  
-#  @exception IOError - Raises if there is a problem with given download paths.
-#  
+#  @exception IOError - Raises when destination directory does not exist.
+#
+#  @exception N/A - Raises when internet connection related errors occur.
+#
 #  @retval None - None.
-def main(downloadPath,htmlPath):
+def main(destinationDir):
     
-    # Checking if the given paths exist or not.
-    try:
-        if os.path.isdir(downloadPath) and os.path.isdir(htmlPath) == True:
+    # Creating HTML Code
+    htmlHead = u"""
+    <html>
+    <head>
+    <title>%s-%s</title>
+    <meta charset="utf-8">
+    <style>
+    .section{
+    font-size:18px;
+    font-family:arial;
+    font-weight:bold;
+    }
+    </style>
+    </head>
+    """
+    htmlBody = u"""
+    <body style="background:lightgrey">
+    <h1>{0}</h1>
+    <div class="section">
+    <p>{1}</p>
+    </div>
+    </body>
+    </html>
+    """
+    
+    
+    
+    # Source URL defined
+    url = 'http://meal.risaleonline.com/getpage.php?sayfa=%d'
+    
+    # Creating the loop for 605 pages
+    for i in range(0,605):
+        
+        # Creating the working URL with page number at the end
+        xmlURL = url %i
+        
+        # Checking the given URL
+        try:
+            response = requests.get(xmlURL)
+        except requests.exceptions.RequestException as e:
+            print e
+        else:
+            # Reading the URL content
+            xmlFile  = response.content
+
+        
+            # Unrecognized characters defined, then replaces them when found
+            trLetter = {'ü':'u','û':'u', 'ı':'i', 'î':'i', 'ī':'i', 'ğ':'g', 'ş':'s', 'â':'a', 'ā':'a', 'ö':'o', 
+                        'Â':'A', 'Û':'U', 'İ':'I', 'Ö':'O', 'ç':'c', 'Ş':'S', 'Ç':'C', 'Ü':'U', 'Ğ':'G', '‘':'-', '’':'-'}
+            for x in trLetter:
+                xmlFile = xmlFile.replace(x, trLetter[x])
             
-            # Defining required path(s)
-            xmlUrl = 'http://meal.risaleonline.com/getpage.php?sayfa='
             
-            pageNumber  = range(0,6)
-                
-            for i in pageNumber:
-                
-                # Defining required paths for the given number of pages
-                xmlAddress   = ''.join([xmlUrl,str(i)])
-                xmlFileNo    = ''.join([str(i),'.xml'])
-                xmlFileName  = os.path.join(downloadPath,xmlFileNo)
-                htmlFileNo   = ''.join([str(i),'.html'])
-                htmlFileName = os.path.join(htmlPath,htmlFileNo)
+            # There is an extra tag within the first page so handling it here to make it egual with the rest.
+            if i == 0:
+                noSureBaslik   = re.sub('<span class=.*?>.*?</span><sup>.*?</sup>','', xmlFile)
+                # Removing image tags from the whole XML file
+                noImageXMLFile = re.sub('<img .*?>','', noSureBaslik)
+            else:
+                noSureBaslik   = re.sub('<span class=.*?>.*?</span><.../>','', xmlFile)
+                # Removing image tags from the whole XML file
+                noImageXMLFile = re.sub('<img .*?>','', noSureBaslik)
             
-                # -----READING the XML File-----
-                response = requests.get(xmlAddress)
-                xmlFile = response.content
+            
+            # Checking the XML file, then parsing it
+            try:
+                xmlRead  = ET.fromstring(noImageXMLFile) 
+            except Exception.error:
+                print error
+            else:
+                # Extracting required tags from the XML file
+                sureName = xmlRead.find('ilksureadi').text
+                content  = xmlRead.find('meal').text
                 
-                
-                # -----REPLACING TURKISH CHARACTERS TO ENGLISH-----
-                # Defining which unrecognized characters to be replaced when found
-                trLetter = {'ü':'u','û':'u', 'ı':'i', 'î':'i', 'ī':'i', 'ğ':'g', 'ş':'s', 'â':'a', 'ā':'a', 'ö':'o', 'Â':'A', 'Û':'U', 'İ':'I'}
-                
-                # Replacing the Turkish characters with the English versions
-                for t in trLetter:
-                    xmlFile = xmlFile.replace(t, trLetter[t])
-                
-                # -----DOWNLOADING the XML File-----
-                with open(xmlFileName, 'w') as fob:
-                    fob.write(xmlFile)
-                
-                
-                # -----CREATING AN HTML FILE-----
-                # Parsing the XML File
-                dom =  ElementTree.parse(xmlFileName)
-                
-                # Creating HTML content
-                sureName    = (dom.find('ilksureadi')).text
-                mealContent = (dom.find('meal')).text
-                
-                htmlContent = """
-                <html>
-                <head>
-                <meta charset="utf-8">
-                <title>%s-%s</title>
-                </head>
-                <body align='center'>
-                <h1>%s</h1><br>
-                %s
-                </body>
-                </html>
-                """ %(str(i),sureName, sureName, mealContent)
+                # Formating the HTML content parts and unifies them as htmlContent.
+                htmlHeadContent = htmlHead %(str(i), sureName)
+                htmlBodyContent = htmlBody.format(sureName, content)
+                htmlContent     = u'{0}{1}'.format(htmlHeadContent,htmlBodyContent)
                 
                 # Creating the HTML File
-                with open(htmlFileName, 'w') as htmlFile:
+                with open('{0}/{1}-{2}.html'.format(destinationDir, '{0:03}'.format(i), sureName), 'w') as htmlFile:
                     htmlFile.write(htmlContent.encode('utf-8'))
-                        
-    except:
-        raise IOError('Path does not exist!\nCheck both of the paths given.')
-            
+
+
 if __name__ == '__main__':
-    
-    main(downloadPath='/home/selcuk/Desktop/pg/XML2', 
-         htmlPath    ='/home/selcuk/Desktop/pg/XML2' )
+    main(destinationDir = '/home/selcuk/Desktop/pg/HTML')
