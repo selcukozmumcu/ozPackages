@@ -59,6 +59,7 @@ def main(destinationDir):
     
     
     
+    
     # Source URL defined
     url = 'http://meal.risaleonline.com/getpage.php?sayfa=%d'
     
@@ -78,7 +79,7 @@ def main(destinationDir):
             xmlFile  = response.content
 
         
-            # Unrecognized characters defined, then replaces them when found
+            # Unrecognized characters defined, then being converted to UTF-8 when found
             trLetter = {'ü':'u','û':'u', 'ı':'i', 'î':'i', 'ī':'i', 'ğ':'g', 'ş':'s', 'â':'a', 'ā':'a', 'ö':'o', 
                         'Â':'A', 'Û':'U', 'İ':'I', 'Ö':'O', 'ç':'c', 'Ş':'S', 'Ç':'C', 'Ü':'U', 'Ğ':'G', '‘':'-', '’':'-'}
             for x in trLetter:
